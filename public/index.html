@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free WCAG & ADA Accessibility Checker — Scan Any URL | Cirv Guard</title>
+<meta name="description" content="Free online accessibility checker. Scan any URL for WCAG 2.1 & ADA compliance — alt text, headings, colour contrast, form labels and link text — in seconds. No signup.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://cirvgreen.com/accessibility-checker">
+<meta property="og:title" content="Free WCAG & ADA Accessibility Checker">
+<meta property="og:description" content="Scan any URL for WCAG 2.1 & ADA accessibility issues in seconds. Free, no signup.">
+<meta property="og:type" content="website">
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --line:#2a313c; --ink:#e6edf3; --muted:#9aa7b4;
+    --accent:#2f81f7; --pass:#2ea043; --fail:#f85149; --warn:#d29922; --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:760px;margin:0 auto;padding:2.5rem 1.25rem 4rem}
+  header h1{font-size:2rem;line-height:1.2;margin:0 0 .5rem}
+  .sub{color:var(--muted);margin:0 0 1.75rem;font-size:1.05rem}
+  .urgency{background:rgba(210,153,34,.12);border:1px solid rgba(210,153,34,.4);color:#f0d68c;
+    padding:.7rem .9rem;border-radius:8px;font-size:.9rem;margin-bottom:1.5rem}
+  form{display:flex;gap:.6rem;flex-wrap:wrap}
+  .field{flex:1 1 320px}
+  label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:.35rem}
+  input[type=url]{width:100%;padding:.8rem .9rem;background:var(--panel);border:1px solid var(--line);
+    border-radius:8px;color:var(--ink);font-size:1rem}
+  input[type=url]:focus{outline:3px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  button{padding:.8rem 1.4rem;background:var(--accent);color:#fff;border:0;border-radius:8px;
+    font-size:1rem;font-weight:600;cursor:pointer;align-self:end}
+  button:hover{background:#1f6fe0}
+  button:focus{outline:3px solid #fff;outline-offset:2px}
+  button[disabled]{opacity:.6;cursor:wait}
+  #status{margin:1.25rem 0 0;color:var(--muted)}
+  .err{color:var(--fail)}
+  .results{margin-top:1.75rem}
+  .results:focus{outline:none}
+  .scorecard{display:flex;align-items:center;gap:1.25rem;background:var(--panel);
+    border:1px solid var(--line);border-radius:var(--radius);padding:1.25rem;margin-bottom:1.25rem}
+  .score{min-width:104px;text-align:center;border-radius:10px;padding:1rem .5rem;color:#fff}
+  .score b{display:block;font-size:2.4rem;line-height:1}
+  .score span{font-size:.75rem;opacity:.9}
+  .scoremeta{font-size:.95rem;color:var(--muted)}
+  .scoremeta strong{color:var(--ink)}
+  .scoremeta code{display:block;color:var(--muted);font-size:.8rem;margin-top:.3rem;word-break:break-all}
+  .group{margin:0 0 1rem;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .group h3{margin:0;font-size:1rem;padding:.8rem 1rem;background:var(--panel);border-bottom:1px solid var(--line)}
+  .item{display:flex;gap:.7rem;padding:.7rem 1rem;border-bottom:1px solid var(--line);font-size:.92rem}
+  .item:last-child{border-bottom:0}
+  .badge{flex:none;font-size:.7rem;font-weight:700;text-transform:uppercase;padding:.15rem .45rem;
+    border-radius:5px;height:fit-content}
+  .badge.pass{background:rgba(46,160,67,.18);color:#56d364}
+  .badge.fail{background:rgba(248,81,73,.18);color:#ff7b72}
+  .item .msg{flex:1}
+  .item .wcag{color:var(--muted);font-size:.75rem}
+  .item code{display:block;color:var(--muted);font-size:.8rem;margin-top:.25rem;word-break:break-all}
+  .cta{background:linear-gradient(135deg,#11261c,#0d1117);border:1px solid var(--pass);
+    border-radius:var(--radius);padding:1.4rem;margin-top:1.5rem}
+  .cta h3{margin:0 0 .5rem}
+  .cta p{margin:0 0 1rem;color:var(--muted);font-size:.95rem}
+  .cta a{display:inline-block;margin:0 .5rem .5rem 0;padding:.65rem 1.1rem;border-radius:8px;
+    text-decoration:none;font-weight:600}
+  .cta .primary{background:var(--pass);color:#fff}
+  .cta .secondary{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .note{font-size:.82rem;color:var(--muted);margin-top:1.25rem}
+  footer{margin-top:2.5rem;color:var(--muted);font-size:.8rem;text-align:center}
+  footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>Free WCAG &amp; ADA Accessibility Checker</h1>
+    <p class="sub">Scan any public URL for accessibility issues in seconds. Five WCAG 2.1 checks, no signup, no limits.</p>
+  </header>
+
+  <p class="urgency"><strong>The European Accessibility Act is now enforced (June 2025)</strong> and US ADA web lawsuits keep climbing. 96.3% of websites have detectable WCAG failures — find yours below.</p>
+
+  <form id="scanForm" novalidate>
+    <div class="field">
+      <label for="url">Website URL</label>
+      <input type="url" id="url" name="url" placeholder="https://example.com" autocomplete="url" required>
+    </div>
+    <button type="submit" id="go">Scan for free</button>
+  </form>
+
+  <p id="status" role="status" aria-live="polite"></p>
+
+  <section class="results" id="results" hidden aria-label="Scan results"></section>
+
+  <p class="note">This free scanner checks five WCAG criteria from your page’s HTML: alt text (1.1.1), heading structure (1.3.1), inline colour contrast (1.4.3), form labels (1.3.1) and link text (2.4.4). Full rendered-CSS contrast, scheduled monitoring and client-ready PDF reports are in the <a href="https://wordpress.org/plugins/cirv-guard/">Cirv Guard</a> WordPress plugin.</p>
+
+  <footer>
+    Built by <a href="https://cirvgreen.com">Cirvgreen</a> · Powered by <a href="https://wordpress.org/plugins/cirv-guard/">Cirv Guard</a>
+  </footer>
+</main>
+
+<script>
+(function(){
+  var form=document.getElementById('scanForm');
+  var input=document.getElementById('url');
+  var btn=document.getElementById('go');
+  var statusEl=document.getElementById('status');
+  var results=document.getElementById('results');
+
+  // DOM builder — no innerHTML, so untrusted scanned-page content can never execute.
+  function h(tag,attrs,kids){
+    var e=document.createElement(tag);
+    attrs=attrs||{};
+    for(var k in attrs){ if(k==='class')e.className=attrs[k]; else e.setAttribute(k,attrs[k]); }
+    (kids||[]).forEach(function(c){ if(c==null)return; e.appendChild(typeof c==='object'?c:document.createTextNode(String(c))); });
+    return e;
+  }
+  function scoreColor(s){ return s>=80?'var(--pass)':(s>=50?'var(--warn)':'var(--fail)'); }
+
+  function group(title,items){
+    if(!items.length) return null;
+    var g=h('div',{'class':'group'},[h('h3',{},[title+' ('+items.length+')'])]);
+    items.forEach(function(r){
+      var msg=h('span',{'class':'msg'},[r.message+' ', h('span',{'class':'wcag'},[r.wcag])]);
+      if(r.element) msg.appendChild(h('code',{},[r.element]));
+      g.appendChild(h('div',{'class':'item'},[h('span',{'class':'badge '+r.status},[r.status]),msg]));
+    });
+    return g;
+  }
+
+  function render(data){
+    while(results.firstChild) results.removeChild(results.firstChild);
+    var fails=data.results.filter(function(r){return r.status==='fail';});
+    var passes=data.results.filter(function(r){return r.status==='pass';});
+
+    var meta=h('div',{'class':'scoremeta'},[
+      h('strong',{},[String(data.fails)]),
+      ' issue'+(data.fails===1?'':'s')+' found across ',
+      h('strong',{},[String(data.total)]),' checks on',
+      h('code',{},[data.url])
+    ]);
+    results.appendChild(h('div',{'class':'scorecard'},[
+      h('div',{'class':'score','style':'background:'+scoreColor(data.score)},[h('b',{},[String(data.score)]),h('span',{},['/ 100'])]),
+      meta
+    ]));
+
+    var g1=group('Issues to fix',fails); if(g1)results.appendChild(g1);
+    var g2=group('Passing checks',passes); if(g2)results.appendChild(g2);
+
+    results.appendChild(h('div',{'class':'cta'},[
+      h('h3',{},['Fix these automatically on your WordPress site']),
+      h('p',{},['Cirv Guard re-checks every page from inside WordPress and shows you exactly what to fix. Agencies: Guard Pro adds full rendered-CSS contrast, scheduled scans and client-ready PDF compliance reports.']),
+      h('a',{'class':'primary',href:'https://wordpress.org/plugins/cirv-guard/'},['Install Cirv Guard — Free']),
+      h('a',{'class':'secondary',href:'https://cirvgreen.com/guard'},['Guard Pro for agencies — $99/yr'])
+    ]));
+
+    results.hidden=false;
+    results.setAttribute('tabindex','-1');
+    results.focus();
+  }
+
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var url=input.value.trim();
+    if(!url){statusEl.textContent='Enter a URL to scan.';statusEl.className='err';return;}
+    if(!/^https?:\/\//i.test(url)){url='https://'+url;input.value=url;}
+    btn.disabled=true;statusEl.className='';statusEl.textContent='Scanning '+url+' …';results.hidden=true;
+    fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})})
+      .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+      .then(function(res){
+        if(!res.ok){statusEl.className='err';statusEl.textContent=(res.j&&res.j.error)||'Scan failed.';return;}
+        statusEl.textContent='';render(res.j);
+      })
+      .catch(function(){statusEl.className='err';statusEl.textContent='Network error — try again.';})
+      .finally(function(){btn.disabled=false;});
+  });
+})();
+</script>
+</body>
+</html>
