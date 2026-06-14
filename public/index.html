@@ -148,8 +148,8 @@
     results.appendChild(h('div',{'class':'cta'},[
       h('h3',{},['Fix these automatically on your WordPress site']),
       h('p',{},['Cirv Guard re-checks every page from inside WordPress and shows you exactly what to fix. Agencies: Guard Pro adds full rendered-CSS contrast, scheduled scans and client-ready PDF compliance reports.']),
-      h('a',{'class':'primary',href:'https://wordpress.org/plugins/cirv-guard/'},['Install Cirv Guard — Free']),
-      h('a',{'class':'secondary',href:'https://cirvgreen.com/guard'},['Guard Pro for agencies — $99/yr'])
+      h('a',{'class':'primary',href:'https://wordpress.org/plugins/cirv-guard/',onclick:"navigator.sendBeacon&&navigator.sendBeacon('/api/click?cta=install')"},['Install Cirv Guard — Free']),
+      h('a',{'class':'secondary',href:'https://cirvgreen.com/guard',onclick:"navigator.sendBeacon&&navigator.sendBeacon('/api/click?cta=pro')"},['Guard Pro for agencies — $99/yr'])
     ]));
 
     results.hidden=false;
