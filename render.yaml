@@ -1,10 +1,22 @@
+# Render Blueprint for the scanner service.
+# Deploying is an owner decision; this file only defines the service.
+# PORT is injected by Render automatically and read by server/index.js.
 services:
   - type: web
     name: cirv-a11y-scanner
     runtime: node
     plan: free
-    buildCommand: npm install
-    startCommand: node server/index.js
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
     envVars:
       - key: NODE_ENV
         value: production
+      # Per-IP scans per minute on POST /api/scan (server default: 10).
+      - key: SCAN_RATE_LIMIT
+        value: "10"
+      # Comma-separated exact origins allowed to call POST /api/scan
+      # cross-origin (the docs/EMBED.md snippet), e.g. https://cirvgreen.com
+      # Unset or empty = no cross-origin access. Set in the dashboard.
+      - key: EMBED_ORIGINS
+        sync: false
