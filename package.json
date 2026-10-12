@@ -2,7 +2,7 @@
   "name": "cirv-a11y-scanner",
   "version": "1.0.0",
   "private": true,
-  "description": "Free public WCAG/ADA accessibility scanner — top-of-funnel for the Cirv Guard WordPress plugin.",
+  "description": "Static HTML accessibility checker (an automatable subset of WCAG checks), top-of-funnel for the Cirv Guard WordPress plugin.",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",

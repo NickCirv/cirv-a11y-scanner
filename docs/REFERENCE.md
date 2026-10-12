@@ -1,6 +1,6 @@
 # cirv-a11y-scanner — implementation reference
 
-Source revision: `e72e234bec16a74193aa507d1a43ad5295b9074e`. This reference records source declarations; it is not a transcript of a successful run.
+Source revision: `e72e234bec16a74193aa507d1a43ad5295b9074e`. This reference records source declarations; it is not a transcript of a successful run. Updated 12 October 2026 for the per-IP rate limiting and opt-in embed CORS added in later revisions.
 
 ## Entrypoint and runtime
 
@@ -54,6 +54,7 @@ An illustrative result entry has this shape; it is not a measured result from ex
 | --- | --- |
 | `400` | Missing URL: `{"error":"Enter a URL to scan."}` |
 | `400` | Known fetch/validation error: object with `error` and `code` |
+| `429` | Per-IP rate limit exceeded (default 10 scans/min): `Retry-After` header plus object with `error` and `code: "rate_limited"` |
 | `500` | Unexpected scan error: `{"error":"Something went wrong scanning that page."}` |
 
 Known `code` values in the fetch module are `bad_url`, `bad_scheme`, `blocked`, `dns`, `fetch`, `not_html` and `redirects`. Express can also reject malformed or oversized JSON before the route handler. The fetcher rejects internal/private destinations and limits redirects; this source review does not certify the guard against every network edge case.
@@ -69,7 +70,7 @@ The five check groups inspect image alternatives, heading hierarchy, inline-styl
 
 ## Environment references
 
-The implementation reads `PORT`. Some are optional or mode-specific; inspect their call sites before configuring a service. Credentials and endpoint values are never supplied by this document.
+The implementation reads `PORT`, `SCAN_RATE_LIMIT` (per-IP scans per minute on `POST /api/scan`, default 10) and `EMBED_ORIGINS` (comma-separated exact origins allowed to call the scan endpoint cross-origin; unset means no cross-origin access; see [EMBED.md](EMBED.md)). Credentials and endpoint values are never supplied by this document.
 
 ## Implementation sources
 
