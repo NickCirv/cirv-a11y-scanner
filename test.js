@@ -75,5 +75,98 @@ t('blocks metadata IP', () => assert.strictEqual(isBlockedIp('169.254.169.254'),
 t('blocks private 192.168', () => assert.strictEqual(isBlockedIp('192.168.1.1'), true));
 t('allows public IP', () => assert.strictEqual(isBlockedIp('8.8.8.8'), false));
 
-console.log(`\n${pass} passed, ${fail} failed`);
-process.exit(fail ? 1 : 0);
+// --- rate limiter (unit, fake clock) ---
+const { createRateLimiter } = require('./server/rate-limit');
+
+const mockRes = () => ({
+  headers: {}, statusCode: null, body: null,
+  set(k, v) { this.headers[k] = v; return this; },
+  status(c) { this.statusCode = c; return this; },
+  json(b) { this.body = b; return this; },
+});
+const hit = (mw, ip) => {
+  const res = mockRes();
+  let nexted = false;
+  mw({ ip }, res, () => { nexted = true; });
+  return { res, nexted };
+};
+
+t('limiter allows up to the limit', () => {
+  const mw = createRateLimiter({ limit: 3, windowMs: 60000, now: () => 1000 });
+  for (let i = 0; i < 3; i++) assert.strictEqual(hit(mw, '1.2.3.4').nexted, true);
+});
+t('limiter 429s past the limit with Retry-After', () => {
+  const mw = createRateLimiter({ limit: 3, windowMs: 60000, now: () => 1000 });
+  for (let i = 0; i < 3; i++) hit(mw, '1.2.3.4');
+  const { res, nexted } = hit(mw, '1.2.3.4');
+  assert.strictEqual(nexted, false);
+  assert.strictEqual(res.statusCode, 429);
+  assert.strictEqual(res.body.code, 'rate_limited');
+  assert.strictEqual(res.headers['Retry-After'], '60');
+});
+t('limiter resets after the window', () => {
+  let ts = 1000;
+  const mw = createRateLimiter({ limit: 2, windowMs: 60000, now: () => ts });
+  hit(mw, '1.2.3.4'); hit(mw, '1.2.3.4');
+  assert.strictEqual(hit(mw, '1.2.3.4').nexted, false);
+  ts += 60000;
+  assert.strictEqual(hit(mw, '1.2.3.4').nexted, true);
+});
+t('limiter buckets IPs independently', () => {
+  const mw = createRateLimiter({ limit: 1, windowMs: 60000, now: () => 1000 });
+  assert.strictEqual(hit(mw, '1.1.1.1').nexted, true);
+  assert.strictEqual(hit(mw, '1.1.1.1').nexted, false);
+  assert.strictEqual(hit(mw, '2.2.2.2').nexted, true);
+});
+
+// --- HTTP integration: scan endpoint rate limit + embed CORS (localhost only) ---
+(async () => {
+  process.env.EMBED_ORIGINS = 'https://cirvgreen.com';
+  process.env.SCAN_RATE_LIMIT = '10';
+  const app = require('./server/index');
+  const server = app.listen(0);
+  await new Promise((r) => server.once('listening', r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const at = async (name, fn) => {
+    try { await fn(); console.log(`  ok  ${name}`); pass++; }
+    catch (e) { console.error(`  FAIL ${name}\n       ${e.message}`); fail++; }
+  };
+
+  await at('GET /healthz returns ok', async () => {
+    const r = await fetch(`${base}/healthz`);
+    assert.strictEqual(r.status, 200);
+    assert.deepStrictEqual(await r.json(), { ok: true });
+  });
+  await at('CORS preflight allowed for configured origin', async () => {
+    const r = await fetch(`${base}/api/scan`, { method: 'OPTIONS', headers: { Origin: 'https://cirvgreen.com' } });
+    assert.strictEqual(r.status, 204);
+    assert.strictEqual(r.headers.get('access-control-allow-origin'), 'https://cirvgreen.com');
+  });
+  await at('POST carries CORS header for configured origin', async () => {
+    const r = await fetch(`${base}/api/scan`, { method: 'POST', headers: { Origin: 'https://cirvgreen.com' } });
+    assert.strictEqual(r.status, 400); // no url supplied; counts as 1 scan attempt
+    assert.strictEqual(r.headers.get('access-control-allow-origin'), 'https://cirvgreen.com');
+  });
+  await at('no CORS header for unknown origin', async () => {
+    const r = await fetch(`${base}/api/scan`, { method: 'POST', headers: { Origin: 'https://evil.example' } });
+    assert.strictEqual(r.status, 400);
+    assert.strictEqual(r.headers.get('access-control-allow-origin'), null);
+  });
+  await at('11th scan in a minute gets 429 + Retry-After', async () => {
+    // 2 POSTs consumed above; send 8 more to reach the limit of 10.
+    for (let i = 0; i < 8; i++) {
+      const r = await fetch(`${base}/api/scan`, { method: 'POST' });
+      assert.strictEqual(r.status, 400);
+    }
+    const r = await fetch(`${base}/api/scan`, { method: 'POST' });
+    assert.strictEqual(r.status, 429);
+    const retryAfter = Number(r.headers.get('retry-after'));
+    assert(retryAfter >= 1 && retryAfter <= 60, `Retry-After out of range: ${retryAfter}`);
+    const body = await r.json();
+    assert.strictEqual(body.code, 'rate_limited');
+  });
+
+  server.close();
+  console.log(`\n${pass} passed, ${fail} failed`);
+  process.exit(fail ? 1 : 0);
+})();
